@@ -1,152 +1,129 @@
-import React, { useEffect, useState } from 'react';
-import { Avatar, Button, CssBaseline, TextField, FormControlLabel, Checkbox, Typography, makeStyles, Container } from '@material-ui/core';
-import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
-import { withRouter } from 'react-router-dom';
+import React, { useRef } from 'react';
+import PropTypes from 'prop-types';
+import classNames from 'classnames';
+import {
+  Grid,
+  TextField,
+  withWidth,
+  withStyles,
+  Typography,
+  Divider,
+  Button,
+  Paper
+} from '@material-ui/core';
 
-import { db } from '../../firebase';
+// import { Paper } from '../../utility/ui';
+import styles from './Login.styles';
+import loginImg from '../../assets/marketingPhoto.jpg';
 
-const useStyles = makeStyles(theme => ({
-  paper: {
-    marginTop: theme.spacing(8),
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-  avatar: {
-    margin: theme.spacing(1),
-    backgroundColor: theme.palette.secondary.main,
-  },
-  form: {
-    width: '100%', // Fix IE 11 issue.
-    marginTop: theme.spacing(1),
-  },
-  submit: {
-    margin: theme.spacing(3, 0, 2),
-  },
-}));
+import { useAlert, useAuth } from '../../utility/customHooks';
 
-const Login = (props) => {
-  const classes = useStyles();
-  const [user, setUser] = useState(false);
-  const [userName, setUserName] = useState(null);
-  const [password, setPassword] = useState(null);
+const Login = ({ classes, width: brkPoint }) => {
+  const emailRef = useRef();
+  const passRef = useRef();
 
-  // Current date & time
-  const today = new Date();
-  const dd = String(today.getDate()).padStart(2, '0');
-  const mm = String(today.getMonth() + 1).padStart(2, '0');
-  const yyyy = today.getFullYear();
-  let hours = today.getHours();
-  let minutes = today.getMinutes();
-  const ampm = hours >= 12 ? 'pm' : 'am';
-  hours = hours % 12;
-  hours = hours ? hours : 12; // the hour '0' should be '12'
-  minutes = minutes < 10 ? '0' + minutes : minutes;
+  const alert = useAlert();
+  const auth = useAuth();
 
-  const time = hours + ':' + minutes + ' ' + ampm;
-  const date = dd + '/' + mm + '/' + yyyy;
+  const getRenderBasedView = () => {
+    const loginHandler = () => {
+      const username = emailRef.current.value;
+      const password = passRef.current.value;
 
-  useEffect(() => {
-    if (JSON.parse(window.localStorage.getItem('user'))) {
-      props.history.push('/dashboard');
+      if (!username.length && !password.length) {
+        alert.warning('Please Fill All Fields');
+        return;
+      }
+
+      auth.login(username, password);
+    };
+
+    const loginPaper = (
+      <Paper className={classes.paper} squared>
+        <Typography variant="h3" className={classes.heading}>Login</Typography>
+        <Divider className={classes.divider} />
+        <Grid container justify="center" alignItems="center">
+          <Grid item xs={8} className={classes.item}>
+            <TextField
+              autoFocus
+              label="User Name"
+              margin="normal"
+              variant="outlined"
+              fullWidth
+              inputRef={emailRef}
+            />
+          </Grid>
+          <Grid item xs={8} className={classes.item}>
+            <TextField
+              label="Password"
+              type="password"
+              margin="normal"
+              variant="outlined"
+              fullWidth
+              inputRef={passRef}
+            />
+          </Grid>
+        </Grid>
+        <Grid container justify="center" alignItems="center">
+          <Grid item xs={8}>
+            <div className={classes.loginButton}>
+              <Button
+                color="primary"
+                variant="contained"
+                size="large"
+                onClick={loginHandler}
+              >
+                Login
+              </Button>
+            </div>
+          </Grid>
+        </Grid>
+        <Divider className={classes.divider} />
+        <Typography variant="caption" className={classes.caption}>Please Contact Your Admin In case You dont have Credentials</Typography>
+      </Paper>
+    );
+    if (['xs', 'sm'].includes(brkPoint)) {
+      return (
+        <Grid container justify="center" alignItems="center" className={classes.root}>
+          <Grid item xs={8}>
+            {loginPaper}
+          </Grid>
+        </Grid>
+      );
     }
-  }, [props, user])
-
-  const changeUsernameHandler = (e) => {
-    setUserName(e.target.value);
-  }
-
-  const changePasswordHandler = (e) => {
-    setPassword(e.target.value);
-  }
-
-  const signInHandler = () => {
-    const user = {
-      isUser: true,
-      username: userName,
-      password: password,
-      date,
-      time
-    }
-    setUser(true)
-
-    const profile = {
-      isLoggedin: true,
-      username: userName,
-      password: password,
-      date: date,
-      time: time
-    }
-
-    db.collection("user").doc("profile").set({
-      profile
-    }, { merge: true })
-      .then(function () {
-        console.log("Document successfully written!");
-      })
-      .catch(function (error) {
-        console.error("Error writing document: ", error);
-      });
-
-    window.localStorage.setItem('user', JSON.stringify(user));
-  }
+    const loginPaperClass = classNames(classes.paper, classes.loginPaper);
+    return (
+      <Grid container alignItems="center" justify="center" className={classes.root}>
+        <Grid item md={5} lg={5}>
+          <Paper className={loginPaperClass} squared>
+            <div style={{
+              height: '100%',
+              width: '100%',
+              backgroundSize: 'cover',
+              backgroundImage: `url(${loginImg})`,
+            }}
+            >
+              <div style={{ backgroundColor: 'rgb(30, 30, 21, 0.5)', width: '100%', height: '100%' }} />
+            </div>
+          </Paper>
+        </Grid>
+        <Grid item md={5} lg={5}>
+          {loginPaper}
+        </Grid>
+      </Grid>
+    );
+  };
 
   return (
-    <Container component="main" maxWidth="xs">
-      <CssBaseline />
-      <div className={classes.paper}>
-        <Avatar className={classes.avatar}>
-          <LockOutlinedIcon />
-        </Avatar>
-        <Typography component="h1" variant="h5">
-          Sign in
-        </Typography>
-        {/* <form className={classes.form} noValidate> */}
-        <TextField
-          variant="outlined"
-          margin="normal"
-          required
-          fullWidth
-          id="uName"
-          label="User Name"
-          name="uName"
-          autoComplete="uName"
-          autoFocus
-          value={userName || ''}
-          onChange={changeUsernameHandler}
-        />
-        <TextField
-          variant="outlined"
-          margin="normal"
-          required
-          fullWidth
-          name="password"
-          label="Password"
-          type="password"
-          id="password"
-          autoComplete="current-password"
-          value={password || ''}
-          onChange={changePasswordHandler}
-        />
-        <FormControlLabel
-          control={<Checkbox value="remember" color="primary" />}
-          label="Remember me"
-        />
-        <Button
-          type="submit"
-          fullWidth
-          variant="contained"
-          color="primary"
-          className={classes.submit}
-          onClick={signInHandler}
-          disabled={!userName || !password}
-        >
-          Sign In
-        </Button>
-        {/* </form> */}
-      </div>
-    </Container>
+    <React.Fragment>
+      {getRenderBasedView()}
+    </React.Fragment>
   );
-}
+};
 
-export default withRouter(Login);
+Login.propTypes = {
+  classes: PropTypes.instanceOf(Object).isRequired,
+  width: PropTypes.string.isRequired,
+};
+
+export default withStyles(styles)(withWidth()(Login));
